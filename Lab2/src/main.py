@@ -8,7 +8,7 @@ from tqdm import tqdm
 import matplotlib.pyplot as plt
 from argparse import ArgumentParser, Namespace, ArgumentTypeError
 
-from model import EEGNet
+from model import EEGNet, DeepConvNet
 from dataloader import read_bci_data
 
 
@@ -52,6 +52,7 @@ def train(
     learning_rate: float,
     optimizer: optim,
     loss_function: nn.modules.loss,
+    num_of_linear: int,
     batch_size: int,
     train_dataset: TensorDataset,
     test_dataset: TensorDataset
@@ -63,7 +64,11 @@ def train(
             'LeakyReLU': EEGNet(nn.LeakyReLU, dropout).to(train_device)
         }
     else:
-        pass
+        models = {
+            'ELU': DeepConvNet(nn.ELU, dropout, num_of_linear).to(train_device),
+            'ReLU': DeepConvNet(nn.ReLU, dropout, num_of_linear).to(train_device),
+            'LeakyReLU': DeepConvNet(nn.LeakyReLU, dropout, num_of_linear).to(train_device)
+        }
 
     accuracy = {
         'train': {key: [0 for _ in range(epoch)] for key in models.keys()},
@@ -143,15 +148,15 @@ def parse_argument() -> Namespace:
     parser.add_argument('-m', '--model', default='EEG',
                         type=check_model_type, help='EEGNet or DeepConvNet')
     parser.add_argument('-e', '--epochs', default=300, type=int, help='Number of epochs')
-    parser.add_argument('-l', '--learning_rate', default=1e-3,
+    parser.add_argument('-r', '--learning_rate', default=1e-3,
                         type=float, help='Learning rate')
     parser.add_argument('-b', '--batch_size', default=64, type=int, help='Batch size')
     parser.add_argument('-o', '--optimizer', default='adam',
                         type=check_optimizer_type, help='Optimizer')
     parser.add_argument('-d', '--dropout', default=0.25,
                         type=float, help='Dropout probability')
-    # parser.add_argument('-l', '--linear', default=1, type=check_linear_type,
-    #                     help='Extra linear layers in DeepConvNet (default is 1)')
+    parser.add_argument('-l', '--linear', default=1, type=int,
+                        help='Extra linear layers in DeepConvNet (default is 1)')
     return parser.parse_args()
 
 
@@ -163,13 +168,21 @@ def main():
     batch_size = args.batch_size
     optimizer = args.optimizer
     dropout = args.dropout
-    # num_of_linear = args.linear
+    num_of_linear = args.linear
 
     train_data, train_label, test_data, test_label = read_bci_data()
     train_dataset = TensorDataset(Tensor(train_data), Tensor(train_label))
     test_dataset = TensorDataset(Tensor(test_data), Tensor(test_label))
 
     train_device = device('cuda' if cuda.is_available() else 'cpu')
+
+    print(f'Model:            {model}')
+    print(f'Epochs:           {epochs}')
+    print(f'Learning rate:    {learning_rate}')
+    print(f'Batch size:       {batch_size}')
+    print(f'Dropout:          {dropout}')
+    print(f'Number of linear: {num_of_linear}')
+    print(f'Train device:     {"cuda" if cuda.is_available() else "cpu"}')
 
     train(
         model_type=model,
@@ -179,6 +192,7 @@ def main():
         learning_rate=learning_rate,
         optimizer=optimizer,
         loss_function=nn.CrossEntropyLoss(),
+        num_of_linear=num_of_linear,
         batch_size=batch_size,
         train_dataset=train_dataset,
         test_dataset=test_dataset

@@ -1,5 +1,5 @@
-import torch
-from torch import nn
+from torch import nn, Tensor
+from torch.utils.data import TensorDataset
 
 
 class EEGNet(nn.Module):
@@ -67,7 +67,9 @@ class EEGNet(nn.Module):
                 in_channels=32,
                 out_channels=32,
                 kernel_size=(1, 15),
-                padding=(0, 7)
+                stride=(1, 1),
+                padding=(0, 7),
+                bias=False
             ),
             nn.BatchNorm2d(
                 num_features=32,
@@ -90,7 +92,7 @@ class EEGNet(nn.Module):
             nn.Linear(in_features=736, out_features=2, bias=True)
         )
 
-    def forward(self, inputs: torch.tensor) -> torch.tensor:
+    def forward(self, inputs: TensorDataset) -> Tensor:
         # Block 1
         first_conv_result = self.first_conv(inputs)
         depthwise_conv_result = self.depthwise_conv(first_conv_result)
