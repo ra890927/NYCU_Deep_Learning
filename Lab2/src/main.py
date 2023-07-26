@@ -1,10 +1,12 @@
+import os
 import torch
 from torch import nn
 from torch import optim
-from torch import max as tensor_max
+from torch import argmax as tensor_max
 from torch import Tensor, device, cuda, no_grad
 from torch.utils.data import DataLoader, TensorDataset
 from tqdm import tqdm
+from pathlib import Path
 import matplotlib.pyplot as plt
 from argparse import ArgumentParser, Namespace, ArgumentTypeError
 
@@ -75,32 +77,35 @@ def train(
         'test': {key: [0 for _ in range(epoch)] for key in models.keys()}
     }
 
-    train_loader = DataLoader(train_dataset, batch_size=batch_size)
-    test_loader = DataLoader(test_dataset, len(test_dataset))
+    checkpoints_path = Path.cwd().parent.joinpath('checkpoints')
+    train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
+    test_loader = DataLoader(test_dataset, batch_size=len(test_dataset))
 
     for model_name, model in models.items():
         cuda.empty_cache()
+        cur_test_acc_max = 0.0
         model_optim = optimizer(model.parameters(), lr=learning_rate)
 
         # Train model
         for cur_epoch in tqdm(range(epoch)):
             model.train()
+            train_acc, test_acc = 0.0, 0.0
+
             for data, label in train_loader:
                 inputs = data.to(train_device)
                 labels = label.to(train_device).long()
 
-                prediction = model.forward(inputs=inputs)
+                prediction = model(inputs)
+                loss = loss_function(prediction, labels)
 
                 model_optim.zero_grad()
-                loss = loss_function(prediction, labels)
                 loss.backward()
                 model_optim.step()
 
-                accuracy['train'][model_name][cur_epoch] += (
-                    tensor_max(prediction, 1)[1] == labels).sum().item()
+                train_acc += (tensor_max(prediction, dim=1) == labels).sum().item()
 
-            accuracy['train'][model_name][cur_epoch] *= 100.0
-            accuracy['train'][model_name][cur_epoch] /= len(train_dataset)
+            accuracy['train'][model_name][cur_epoch] = train_acc * \
+                100.0 / len(train_dataset)
 
             # Test model
             model.eval()
@@ -109,13 +114,23 @@ def train(
                     inputs = data.to(train_device)
                     labels = label.to(train_device).long()
 
-                    prediction = model.forward(inputs=inputs)
+                    prediction = model(inputs)
 
-                    accuracy['test'][model_name][cur_epoch] += (
-                        tensor_max(prediction, 1)[1] == labels).sum().item()
+                    test_acc += (tensor_max(prediction, dim=1)
+                                 == labels).sum().item()
 
-                accuracy['test'][model_name][cur_epoch] *= 100
-                accuracy['test'][model_name][cur_epoch] /= len(test_dataset)
+                accuracy['test'][model_name][cur_epoch] = test_acc * \
+                    100.0 / len(test_dataset)
+
+            acc = accuracy['test'][model_name][cur_epoch]
+            if acc >= cur_test_acc_max:
+                cur_test_acc_max = acc
+                # get all old models and remove
+                for file_path in checkpoints_path.glob(f'{model_type}_{model_name}_*'):
+                    os.remove(file_path)
+
+                torch.save(model.state_dict(), checkpoints_path.joinpath(
+                    f'{model_type}_{model_name}_{round(acc)}.pt'))
 
         print()
 
