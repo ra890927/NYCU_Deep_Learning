@@ -129,7 +129,7 @@ def train(
                 for file_path in checkpoints_path.glob(f'{model_type}_{model_name}_*'):
                     os.remove(file_path)
 
-                torch.save(model.state_dict(), checkpoints_path.joinpath(
+                torch.save(model, checkpoints_path.joinpath(
                     f'{model_type}_{model_name}_{round(acc)}.pt'))
 
         print()
