@@ -2,6 +2,7 @@ import os
 import torch
 from torch import nn
 from torch import optim
+from torch.backends import mps
 from torch import argmax as tensor_max
 from torch import Tensor, device, cuda, no_grad
 from torch.utils.data import DataLoader, TensorDataset
@@ -189,7 +190,12 @@ def main():
     train_dataset = TensorDataset(Tensor(train_data), Tensor(train_label))
     test_dataset = TensorDataset(Tensor(test_data), Tensor(test_label))
 
-    train_device = device('cuda' if cuda.is_available() else 'cpu')
+    if cuda.is_available():
+        train_device = device('cuda')
+    elif mps.is_available():
+        train_device = device('mps')
+    else:
+        train_device = device('cpu')
 
     print(f'Model:            {model}')
     print(f'Epochs:           {epochs}')
@@ -197,7 +203,7 @@ def main():
     print(f'Batch size:       {batch_size}')
     print(f'Dropout:          {dropout}')
     print(f'Number of linear: {num_of_linear}')
-    print(f'Train device:     {"cuda" if cuda.is_available() else "cpu"}')
+    print(f'Train device:     {"cuda" if cuda.is_available() else "mps" if mps.is_available() else "cpu"}')
 
     train(
         model_type=model,
