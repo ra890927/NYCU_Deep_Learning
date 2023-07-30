@@ -1,5 +1,5 @@
 .vscode
 */__pycache__
 *.pyc
-/data
+/new_data
 setting.json
