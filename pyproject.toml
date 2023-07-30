@@ -13,6 +13,7 @@ torch = "^2.0.1"
 torchvision = "^0.15.2"
 torchaudio = "^2.0.2"
 tqdm = "^4.65.0"
+autopep8 = "^2.0.2"
 
 
 [build-system]
