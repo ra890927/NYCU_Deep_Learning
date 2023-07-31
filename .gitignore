@@ -1,5 +1,5 @@
 .vscode
 */__pycache__
 *.pyc
-/new_dataset
+*/new_dataset
 setting.json
