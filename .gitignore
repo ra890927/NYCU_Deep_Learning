@@ -3,4 +3,5 @@
 *.pyc
 */new_dataset
 */.DS_Store
+*.zip
 setting.json
