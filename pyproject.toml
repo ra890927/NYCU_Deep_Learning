@@ -14,6 +14,8 @@ torchvision = "^0.15.2"
 torchaudio = "^2.0.2"
 tqdm = "^4.65.0"
 autopep8 = "^2.0.2"
+pillow = "^10.0.0"
+pandas = "^2.0.3"
 
 
 [build-system]
