@@ -6,7 +6,7 @@ from typing import Type, Union, Optional, List
 from .__block__ import BasicBlock, BottleneckBlock
 
 
-class ResNet(nn.modules):
+class ResNet(nn.Module):
     def __init__(
         self,
         block: Type[Union[BasicBlock, BottleneckBlock]],
@@ -68,7 +68,8 @@ class ResNet(nn.modules):
 
         self.classify = nn.Sequential(
             nn.AdaptiveAvgPool2d((1, 1)),
-            nn.Linear(512 * self.expansion, num_classes, bias=True)
+            nn.Flatten(),
+            nn.Linear(512 * self.expansion, num_classes)
         )
 
     def forward(self, inputs: TensorDataset) -> Tensor:
@@ -94,10 +95,10 @@ class ResNet(nn.modules):
 
         down_sample = None
         out_channels = in_channels * self.expansion
-        if stride != 1:
+        if stride != 1 or self.current_channels != out_channels:
             down_sample = nn.Sequential(
                 nn.Conv2d(
-                    in_channels=in_channels,
+                    in_channels=self.current_channels,
                     out_channels=out_channels,
                     kernel_size=1,
                     stride=stride,
