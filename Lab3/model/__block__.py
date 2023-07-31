@@ -8,9 +8,9 @@ class BasicBlock(nn.Module):
         self,
         in_channels: int,
         out_channels: int,
-        stride: int,
-        down_sample: nn.Module,
+        stride: int = 1,
         expansion: int = 1,
+        down_sample: nn.Module = None,
         activation: nn.modules.activation = nn.ReLU(inplace=True)
     ) -> None:
         super(BasicBlock, self).__init__()
@@ -34,12 +34,12 @@ class BasicBlock(nn.Module):
             activation,
             nn.Conv2d(
                 in_channels=out_channels,
-                out_channels=out_channels,
+                out_channels=out_channels * self.expansion,
                 kernel_size=3,
                 padding=1,
                 bias=False
             ),
-            nn.BatchNorm2d(out_channels)
+            nn.BatchNorm2d(out_channels * self.expansion)
         )
 
     def forward(self, inputs: TensorDataset) -> Tensor:
@@ -59,9 +59,9 @@ class BottleneckBlock(nn.Module):
         self,
         in_channels: int,
         out_channels: int,
-        stride: int,
-        down_sample: nn.Module,
+        stride: int = 1,
         expansion: int = 4,
+        down_sample: nn.Module = None,
         activation: nn.modules.activation = nn.ReLU(inplace=True)
     ) -> None:
         super(BottleneckBlock, self).__init__()
