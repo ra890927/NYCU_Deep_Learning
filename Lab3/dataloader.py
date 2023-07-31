@@ -35,7 +35,7 @@ class LeukemiaLoader(data.Dataset):
 
     def __getitem__(self, index: int) -> Tuple[Tensor, int]:
         label = self.label_list[index]
-        img = Image.open(f'{self.root_path}/{self.img_path_list[index]}')
+        img = Image.open(self.img_path_list[index])
         img_data = self.transform(img)
         return img_data, label
 
