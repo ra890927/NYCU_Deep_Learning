@@ -10,8 +10,7 @@ class LeukemiaLoader(data.Dataset):
     def __init__(
         self,
         mode: str,
-        root_path: str = './new_dataset',
-        transformations: transforms = None
+        root_path: str = './new_dataset'
     ) -> None:
         """
         :param mode: which mode dataset (train, valid, test)
@@ -24,11 +23,11 @@ class LeukemiaLoader(data.Dataset):
         self.root_path = root_path
         self.img_path_list, self.label_list = self.__get_data()
 
-        trans = []
-        if transformations:
-            trans += transformations
-        trans.append(transforms.ToTensor())
-        self.transform = transforms.Compose(trans)
+        self.transform = transforms.RandomOrder([
+            transforms.RandomRotation(degrees=20),
+            transforms.RandomHorizontalFlip(p=0.5),
+            transforms.RandomVerticalFlip(p=0.5)
+        ])
 
     def __len__(self) -> int:
         return len(self.img_path_list)
@@ -36,7 +35,9 @@ class LeukemiaLoader(data.Dataset):
     def __getitem__(self, index: int) -> Tuple[Tensor, int]:
         label = self.label_list[index]
         img = Image.open(self.img_path_list[index])
-        img_data = self.transform(img)
+        if self.mode == 'train':
+            img = self.transform(img)
+        img_data = transforms.ToTensor()(img)
         return img_data, label
 
     def __get_data(self) -> Tuple[List[str]]:
