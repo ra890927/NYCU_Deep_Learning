@@ -52,7 +52,11 @@ def train(
     test_loader = DataLoader(test_dataset, batch_size=batch_size)
 
     for model_name, model in models.items():
-        mps.empty_cache()
+        if train_device.type == 'mps':
+            mps.empty_cache()
+        elif train_device.type == 'cuda':
+            cuda.empty_cache()
+
         model_optim = optimizer(
             model.parameters(),
             lr=learning_rate,
@@ -64,7 +68,6 @@ def train(
             model.train()
             train_acc, test_acc = 0.0, 0.0
 
-            print('model train start')
             for data, label in train_loader:
                 inputs = data.to(train_device)
                 labels = label.to(train_device).long()
@@ -72,21 +75,15 @@ def train(
                 prediction = model(inputs)
                 loss = nn.CrossEntropyLoss()(prediction, labels)
 
-                print(f'loss: {loss.item()}')
-
                 model_optim.zero_grad()
                 loss.backward()
                 model_optim.step()
 
                 train_acc += (tensor_max(prediction, dim=1) == labels).sum().item()
 
-                print(f'acc: {train_acc}')
-            print('model train end')
-
             accuracy['train'][model_name][epoch] = train_acc * \
                 100 / len(train_loader.dataset)
 
-            print('model test start')
             model.eval()
             with no_grad():
                 for data, label in test_loader:
@@ -96,11 +93,9 @@ def train(
                     prediction = model(inputs)
 
                     test_acc += (tensor_max(prediction, dim=1) == labels).sum().item()
-                    print(f'acc: {test_acc}')
 
                 accuracy['test'][model_name][epoch] = test_acc * \
                     100 / len(test_loader.dataset)
-            print('model test end')
 
     longest = len(max(accuracy['train'].keys(), key=len)) + 6
     for train_or_test in accuracy.keys():
