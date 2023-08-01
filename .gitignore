@@ -2,6 +2,7 @@
 */__pycache__
 *.pyc
 */new_dataset
-*/.DS_Store
+*.DS_Store
+*/storage
 *.zip
 setting.json
