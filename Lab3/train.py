@@ -1,13 +1,16 @@
+import torch
 from torch import nn
 from torch import optim
 from torch import argmax as tensor_max
 from torch.backends import mps as mpsback
 from torch import device, cuda, mps, no_grad
 from torch.utils.data import TensorDataset, DataLoader
-from torchvision import transforms
 
 import matplotlib.pyplot as plt
 from tqdm import tqdm
+from typing import Dict
+from pathlib import Path
+from datetime import datetime
 from argparse import ArgumentParser, ArgumentTypeError, Namespace
 
 from dataloader import LeukemiaLoader
@@ -105,7 +108,8 @@ def train(
             print(
                 f'{model_name}_{train_or_test}: {spaces}{max(accuracy[train_or_test][model_name]):.2f} %')
 
-    show_result(epoch, accuracy)
+    show_result(epochs, accuracy)
+    save_model(Path('./storage'), models, accuracy)
 
 
 def show_result(
@@ -129,6 +133,16 @@ def show_result(
     plt.show()
 
 
+def save_model(root_path: Path, models: Dict[str, nn.Module], accuracy: dict):
+    folder_name = datetime.now().strftime('%y-%m-%d-%H-%M-%S')
+    folder_path = root_path.joinpath(folder_name)
+    folder_path.mkdir(parents=True, exist_ok=True)
+
+    for model_name, model in models.items():
+        max_acc = max(accuracy['test'][model_name])
+        torch.save(model, folder_path.joinpath(f'{model_name}-{max_acc}.pt'))
+
+
 def check_optimizer_type(value: str) -> optim:
     OPTIM_STR_DICT = {
         'sgd': optim.SGD,
@@ -147,7 +161,7 @@ def check_optimizer_type(value: str) -> optim:
 
 def parse_argument() -> Namespace:
     parser = ArgumentParser()
-    parser.add_argument('-e', '--epochs', default=300, type=int, help='Number of epochs')
+    parser.add_argument('-e', '--epochs', default=10, type=int, help='Number of epochs')
     parser.add_argument('-b', '--batch_size', default=16, type=int, help='Batch size')
     parser.add_argument('-o', '--optimizer', default='sgd',
                         type=check_optimizer_type, help='Optimizer')
@@ -194,10 +208,7 @@ def main():
         momentum=momentum,
         weight_decay=weight_decay,
         train_device=train_device,
-        train_dataset=LeukemiaLoader('train', transformations=[
-            transforms.RandomHorizontalFlip(p=0.5),
-            transforms.RandomVerticalFlip(p=0.5)
-        ]),
+        train_dataset=LeukemiaLoader('train'),
         test_dataset=LeukemiaLoader('valid')
     )
 
