@@ -8,10 +8,13 @@ from torch.utils.data import DataLoader
 
 import json
 import matplotlib.pyplot as plt
+from math import ceil
 from tqdm import tqdm
 from pathlib import Path
+from datetime import datetime
 from argparse import ArgumentParser, ArgumentTypeError, Namespace
 
+from eval import eval
 from dataloader import LeukemiaLoader
 from model import ResNet, ResNet18, ResNet50, ResNet152
 
@@ -49,26 +52,44 @@ def train(
         'test': [0 for _ in range(epochs)]
     }
 
+    cur_best_acc = 0
+    best_acc_weights = None
     train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
     test_loader = DataLoader(test_dataset, batch_size=batch_size)
+
+    if model_name == 'ResNet18':
+        predict_dataset = LeukemiaLoader('test18')
+    elif model_name == 'ResNet50':
+        predict_dataset = LeukemiaLoader('test50')
+    else:
+        predict_dataset = LeukemiaLoader('test152')
 
     if train_device.type == 'mps':
         mps.empty_cache()
     elif train_device.type == 'cuda':
         cuda.empty_cache()
 
-    model_optim = optimizer(
-        model.parameters(),
-        lr=learning_rate,
-        momentum=momentum,
-        weight_decay=weight_decay
-    )
+    try:
+        model_optim = optimizer(
+            model.parameters(),
+            lr=learning_rate,
+            momentum=momentum,
+            weight_decay=weight_decay
+        )
+    except:
+        model_optim = optimizer(
+            model.parameters(),
+            lr=learning_rate,
+            weight_decay=weight_decay
+        )
+
+    start_time = datetime.now()
 
     for epoch in range(epochs):
-        print(f'Epoch {epoch}:')
+        print(f'\nEpoch {epoch}:')
 
         model.train()
-        train_acc, test_acc = 0.0, 0.0
+        train_acc, test_acc, train_loss = 0.0, 0.0, 0.0
 
         for data, label in tqdm(train_loader):
             inputs = data.to(train_device)
@@ -76,6 +97,7 @@ def train(
 
             prediction = model(inputs)
             loss = nn.CrossEntropyLoss()(prediction, labels)
+            train_loss += loss.item()
 
             model_optim.zero_grad()
             loss.backward()
@@ -83,6 +105,7 @@ def train(
 
             train_acc += (tensor_max(prediction, dim=1) == labels).sum().item()
 
+        train_loss /= ceil(len(train_dataset) / batch_size)
         accuracy['train'][epoch] = train_acc * 100 / len(train_loader.dataset)
 
         model.eval()
@@ -97,11 +120,34 @@ def train(
 
             accuracy['test'][epoch] = test_acc * 100 / len(test_loader.dataset)
 
+        print(f'Loss:  {train_loss}')
+        print(f'Train: {accuracy["train"][epoch]}')
+        print(f'Test:  {accuracy["test"][epoch]}')
+
+        if accuracy['test'][epoch] >= cur_best_acc:
+            cur_best_acc = accuracy['test'][epoch]
+
+            # weights
+            best_acc_weights = model.state_dict()
+
+            # save result
+            result = eval(model, predict_dataset, batch_size, train_device)
+
+            if model_name == 'ResNet18':
+                result.to_csv('./312553004_resnet18.csv', index=False)
+            elif model_name == 'ResNet50':
+                result.to_csv('./312553004_resnet50.csv', index=False)
+            else:
+                result.to_csv('./312553004_resnet152.csv', index=False)
+
+    end_time = datetime.now()
+
+    print(f'Time:  {end_time - start_time}')
     print(f'Train: {max(accuracy["train"])}')
     print(f'Test:  {max(accuracy["test"])}')
 
-    save_model(save_folder, model_name, model, accuracy)
     show_result(model_name, accuracy, save_folder, epochs)
+    save_model(save_folder, model_name, best_acc_weights, accuracy)
 
 
 def show_result(
@@ -126,25 +172,35 @@ def show_result(
     plt.savefig(save_path.joinpath(f'accuracy.png'))
 
 
-def save_model(save_path: Path, model_name: str, model: nn.Module, accuracy: dict):
-    max_acc = max(accuracy['test'])
+def save_model(save_path: Path, model_name: str, model_weights: dict, accuracy: dict):
+    max_acc = round(max(accuracy['test']))
     save_path.mkdir(parents=True, exist_ok=True)
 
     # save model
-    torch.save(model, save_path.joinpath(f'{model_name}-{max_acc}.pt'))
+    torch.save(model_weights, save_path.joinpath(f'{model_name}-{max_acc}.pt'))
     # save accuracy
     with open(save_path.joinpath(f'{model_name}-{max_acc}.json'), 'w+', encoding='utf-8') as f:
         json.dump(accuracy, f, indent=2)
 
 
 def check_model_type(value: str) -> ResNet:
-    if value == 'ResNet18' or value == 'ResNet50' or value == 'ResNet152':
+    global MODEL_STR_DICT
+
+    MODEL_STR_DICT = {
+        'ResNet18': ResNet18(2),
+        'ResNet50': ResNet50(2),
+        'ResNet152': ResNet152(2),
+    }
+
+    if value in MODEL_STR_DICT.keys():
         return value
     else:
         raise ArgumentTypeError(f'Does not support model {value}')
 
 
 def check_optimizer_type(value: str) -> optim:
+    global OPTIM_STR_DICT
+
     OPTIM_STR_DICT = {
         'sgd': optim.SGD,
         'adam': optim.Adam,
@@ -154,9 +210,9 @@ def check_optimizer_type(value: str) -> optim:
         'adamax': optim.Adamax
     }
 
-    try:
-        return OPTIM_STR_DICT[value]
-    except:
+    if value in OPTIM_STR_DICT.keys():
+        return value
+    else:
         raise ArgumentTypeError(f'Does not suppot optimizer {value}.')
 
 
@@ -165,10 +221,10 @@ def parse_argument() -> Namespace:
     parser.add_argument('-m', '--model', default='ResNet18',
                         type=check_model_type, help='Model')
     parser.add_argument('-e', '--epochs', default=10, type=int, help='Number of epochs')
-    parser.add_argument('-b', '--batch_size', default=16, type=int, help='Batch size')
-    parser.add_argument('-o', '--optimizer', default='sgd',
+    parser.add_argument('-b', '--batch_size', default=32, type=int, help='Batch size')
+    parser.add_argument('-o', '--optimizer', default='adam',
                         type=check_optimizer_type, help='Optimizer')
-    parser.add_argument('-r', '--learning_rate', default=0.1,
+    parser.add_argument('-r', '--learning_rate', default=0.001,
                         type=float, help='Learning rate')
     parser.add_argument('-mm', '--momentum', default=0.9,
                         type=float, help='Momentum for SGD')
@@ -200,17 +256,15 @@ def main():
     print(f'Model:            {model}')
     print(f'Epochs:           {epochs}')
     print(f'Batch size:       {batch_size}')
+    print(f'Optimizer:        {optimizer}')
     print(f'Learning rate:    {learning_rate}')
     print(f'Momentum:         {momentum}')
     print(f'Weight decay:     {weight_decay}')
     print(f'Train device:     {train_device_name}')
 
     model_name = model
-    model = {
-        'ResNet18': ResNet18(2).to(train_device),
-        'ResNet50': ResNet50(2).to(train_device),
-        'ResNet152': ResNet152(2).to(train_device),
-    }[model_name]
+    model = MODEL_STR_DICT[model_name].to(train_device)
+    optimizer = OPTIM_STR_DICT[optimizer]
 
     train(
         model=model,
