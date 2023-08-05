@@ -29,6 +29,12 @@ class LeukemiaLoader(data.Dataset):
             transforms.RandomVerticalFlip(p=0.5)
         ])
 
+        self.to_tensor = transforms.Compose([
+            transforms.CenterCrop(350),
+            transforms.Resize([350, 350]),
+            transforms.ToTensor(),
+        ])
+
     def __len__(self) -> int:
         return len(self.img_path_list)
 
@@ -37,7 +43,7 @@ class LeukemiaLoader(data.Dataset):
         img = Image.open(self.img_path_list[index])
         if self.mode == 'train':
             img = self.transform(img)
-        img_data = transforms.ToTensor()(img)
+        img_data = self.to_tensor(img)
         return img_data, label
 
     def __get_data(self) -> Tuple[List[str]]:
@@ -54,8 +60,10 @@ class LeukemiaLoader(data.Dataset):
         else:
             raise ValueError(f'Does not support {self.mode}')
 
-        # TODO: processing test mode loader
         img_path_list = df['Path'].to_list()
-        label_list = df['label'].to_list()
+        try:
+            label_list = df['label'].to_list()
+        except:
+            label_list = [0 for _ in range(len(img_path_list))]
 
         return img_path_list, label_list
