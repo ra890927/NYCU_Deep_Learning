@@ -1,7 +1,7 @@
 import torch
 from torch import nn
 from torch import argmax as tenser_max
-from torch import cuda, device, no_grad
+from torch import device, no_grad
 from torch.utils.data import DataLoader
 from tqdm import tqdm
 from pandas import DataFrame
@@ -34,10 +34,10 @@ def eval(model: nn.Module, dataset: LeukemiaLoader, batch_size: int, train_devic
 def check_device_type(value: str) -> str:
     value = ''.join(value.split())
 
-    if 'cuda' in value:
+    if 'cuda' in value or 'mps' in value:
         return value
     else:
-        raise ArgumentTypeError('Device must contain cuda.')
+        raise ArgumentTypeError('Device must contain cuda or mps.')
 
 
 def check_model_type(value: str) -> str:
@@ -71,10 +71,10 @@ def main():
     if use_cpu:
         train_device = device('cpu')
     else:
-        if cuda.is_available():
+        try:
             train_device = device(use_device)
-        else:
-            raise ArgumentError('Your device does not support cuda.')
+        except:
+            raise ArgumentError(f'Your device does not support {use_device}.')
 
     if architecture == 'test18':
         model = ResNet18(2).to(train_device)
