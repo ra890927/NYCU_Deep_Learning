@@ -5,30 +5,41 @@ from torch import cuda, device, no_grad
 from torch.utils.data import DataLoader
 from tqdm import tqdm
 from pandas import DataFrame
+from matplotlib import pyplot as plt
+from sklearn.metrics import confusion_matrix, ConfusionMatrixDisplay
 from argparse import ArgumentParser, Namespace, ArgumentError, ArgumentTypeError
 
 from dataloader import LeukemiaLoader
 from model import ResNet18, ResNet50, ResNet152
 
 
-def eval(model: nn.Module, dataset: LeukemiaLoader, batch_size: int, train_device: device) -> DataFrame:
-    predict_list = []
-    loader = DataLoader(dataset, batch_size=batch_size)
+def eval(
+    model: nn.Module,
+    valid_dataset: LeukemiaLoader,
+    test_dataset: LeukemiaLoader,
+    batch_size: int,
+    train_device: device
+) -> DataFrame:
+    test_predict_list = []
+    valid_predict_list = []
+    test_loader = DataLoader(test_dataset, batch_size=batch_size)
+    valid_loader = DataLoader(valid_dataset, batch_size=batch_size)
 
     model.eval()
     with no_grad():
-        for data, _ in tqdm(loader):
+        print('Get valid dataset prediction')
+        for data, _ in tqdm(valid_loader):
             inputs = data.to(train_device)
-
             prediction = model(inputs)
-            predict_list += tenser_max(prediction, dim=1).tolist()
+            valid_predict_list += tenser_max(prediction, dim=1).tolist()
 
-    result = DataFrame({
-        'ID': dataset.img_path_list,
-        'label': predict_list
-    })
+        print('Get test dataset prediction')
+        for data, _ in tqdm(test_loader):
+            inputs = data.to(train_device)
+            prediction = model(inputs)
+            test_predict_list += tenser_max(prediction, dim=1).tolist()
 
-    return result
+    return valid_predict_list, test_predict_list
 
 
 def check_device_type(value: str) -> str:
@@ -85,14 +96,31 @@ def main():
 
     model.load_state_dict(torch.load(model_path))
 
+    valid_dataset = LeukemiaLoader('valid')
     test_dataset = LeukemiaLoader(architecture)
-    result = eval(model, test_dataset, batch_size, train_device)
+    valid_predict_list, test_predict_list = eval(
+        model, valid_dataset, test_dataset, batch_size, train_device)
+
+    result = DataFrame({
+        'ID': test_dataset.img_path_list,
+        'label': test_predict_list
+    })
+
+    ground_truth = valid_dataset.label_list
+    cm = confusion_matrix(y_true=ground_truth,
+                          y_pred=valid_predict_list, normalize='true')
+    ConfusionMatrixDisplay(confusion_matrix=cm, display_labels=[
+                           False, True]).plot(cmap=plt.cm.Blues)
+    plt.title(f'Normalized confusion matrix')
 
     if architecture == 'test18':
+        plt.savefig('./ResNet18_confusion_matrix.png')
         result.to_csv('./312553004_resnet18.csv', index=False)
     elif architecture == 'test50':
+        plt.savefig('./ResNet50_confusion_matrix.png')
         result.to_csv('./312553004_resnet50.csv', index=False)
     else:
+        plt.savefig('./ResNet152_confusion_matrix.png')
         result.to_csv('./312553004_resnet152.csv', index=False)
 
 
