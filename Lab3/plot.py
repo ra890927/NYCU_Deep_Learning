@@ -60,13 +60,14 @@ def main() -> None:
         accuracy['train']['ResNet152'], accuracy['test']['ResNet152'] = json.load(f).values()
     # autopep8: on
 
-    max_epochs = len(max(accuracy['train'].values(), key=len))
+    min_epochs = len(min(accuracy['train'].values(), key=len))
     for test_or_train in accuracy.keys():
         for model_name in accuracy[test_or_train].keys():
             acc_list = accuracy[test_or_train][model_name]
-            acc_list += [0 for _ in range(max_epochs - len(acc_list))]
+            acc_list = acc_list[len(acc_list) - min_epochs:]
+            accuracy[test_or_train][model_name] = acc_list
 
-    show_result(max_epochs, accuracy)
+    show_result(min_epochs, accuracy)
 
 
 if __name__ == '__main__':
