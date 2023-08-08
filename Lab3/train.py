@@ -11,6 +11,7 @@ import matplotlib.pyplot as plt
 from math import ceil
 from tqdm import tqdm
 from pathlib import Path
+from pandas import DataFrame
 from datetime import datetime
 from argparse import ArgumentParser, ArgumentTypeError, Namespace
 
@@ -131,7 +132,13 @@ def train(
             best_acc_weights = model.state_dict()
 
             # save result
-            result = eval(model, predict_dataset, batch_size, train_device)
+            _, test_predict_list = eval(
+                model, test_dataset, predict_dataset, batch_size, train_device)
+
+            result = DataFrame({
+                'ID': predict_dataset.img_path_list,
+                'label': test_predict_list
+            })
 
             if model_name == 'ResNet18':
                 result.to_csv('./312553004_resnet18.csv', index=False)
