@@ -239,7 +239,7 @@ class VAE_Model(nn.Module):
 
             last_frame_feat = self.frame_transformation(img_per_frame)
 
-        return total_loss, total_psnr / self.train_vi_len
+        return total_loss, total_psnr / self.val_vi_len
 
     def make_gif(self, images_list, img_name):
         new_list = []
