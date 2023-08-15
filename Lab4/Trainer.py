@@ -46,6 +46,7 @@ class kl_annealing():
         self.current_epoch = current_epoch
         self.beta = 0.0  # Initialize beta value
 
+        self.kl_anneal_type = args.kl_anneal_type
         self.kl_anneal_cycle = args.kl_anneal_cycle
         self.kl_anneal_ratio = args.kl_anneal_ratio
 
@@ -57,8 +58,14 @@ class kl_annealing():
         return self.beta
 
     def frange_cycle_linear(self, start=0.0, stop=1.0):
-        current_cycle = self.current_epoch % self.kl_anneal_cycle
-        current_cycle /= self.kl_anneal_cycle
+        if self.kl_anneal_type == 'Cyclical':
+            current_cycle = self.current_epoch % self.kl_anneal_cycle
+            current_cycle /= self.kl_anneal_cycle
+        elif self.kl_anneal_type == 'Monotonic':
+            current_cycle = min(self.current_epoch / self.kl_anneal_cycle, 1.0)
+        elif self.kl_anneal_type == 'None':
+            return 1.0
+
         current_cycle = min(current_cycle / self.kl_anneal_ratio, 1.0)
         return start + (stop - start) * current_cycle
 
