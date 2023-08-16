@@ -2,9 +2,12 @@
 */__pycache__
 *.pyc
 */new_dataset
+*/LAB4_Dataset
 *.DS_Store
 */storage
 *.zip
 *.out
 *.csv
+*.ckpt
+*.gif
 setting.json
