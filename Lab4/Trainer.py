@@ -206,6 +206,7 @@ class VAE_Model(nn.Module):
         return total_loss.detach().cpu().item()
 
     def val_one_step(self, img, label):
+        psnr_list = []
         total_loss, total_psnr = 0, 0
         img = img.permute(1, 0, 2, 3, 4)  # change tensor into (seq, B, C, H, W)
         label = label.permute(1, 0, 2, 3, 4)  # change tensor into (seq, B, C, H, W)
@@ -235,9 +236,13 @@ class VAE_Model(nn.Module):
 
             total_loss += loss.detach().cpu().item()
 
+            psnr_list.append(psnr.item())
+
             total_psnr += psnr.item()
 
             last_frame_feat = self.frame_transformation(img_per_frame)
+
+        self.psnr_list = psnr_list
 
         return total_loss, total_psnr / self.val_vi_len
 
@@ -347,6 +352,22 @@ class VAE_Model(nn.Module):
         self.optim.step()
 
 
+def show_psnr_result(psnr_list):
+    plt.figure(0)
+    plt.xlabel('Frame index')
+    plt.ylabel('PSNR')
+    plt.title('teacher forcing loss curve')
+
+    plt.plot(
+        range(len(psnr_list)),
+        psnr_list,
+        label='avg psnr',
+    )
+
+    plt.legend(loc='lower right')
+    plt.savefig('psnr.png')
+
+
 def main(args):
 
     os.makedirs(args.save_root, exist_ok=True)
@@ -354,6 +375,7 @@ def main(args):
     model.load_checkpoint()
     if args.test:
         model.eval()
+        show_psnr_result(model.psnr_list)
     else:
         model.training_stage()
 
