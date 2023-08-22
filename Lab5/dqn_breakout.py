@@ -38,7 +38,7 @@ class ReplayMemory(object):
 
     def push(self, *args):
         """Saves a transition"""
-        self.memory_list.append(self.Transition(args))
+        self.memory_list.append(self.Transition(*args))
 
         if len(self.memory_list) > self.max_capacity:
             self.memory_list = self.memory_list.pop(0)
@@ -113,21 +113,21 @@ class DQN:
 
     def select_action(self, state, epsilon, action_space):
         '''epsilon-greedy based on behavior network'''
-        state = torch.from_numpy(state).float().unsqueeze(0).to(self.device)
-
-        self._behavior_net.eval()
-        with torch.no_grad():
-            action_values = self._behavior_net(state)
-
-        self._behavior_net.train()
         if random.random() > epsilon:
-            return np.argmax(action_values.cpu().data.numpy())
+            self._behavior_net.train()
+            state = torch.from_numpy(state).float().unsqueeze(0).to(self.device)
+
+            self._behavior_net.eval()
+            with torch.no_grad():
+                action_values = self._behavior_net(state)
+
+            return action_values.argmax().item()
         else:
-            return random.choice(np.arange(action_space))
+            return action_space.sample()
 
     def append(self, state, action, reward, next_state, done):
         """Push a transition into replay buffer"""
-        self._memory.push(state, next_state, action, reward, done)
+        self._memory.push(state, [action], [reward / 10], next_state, [int(done)])
 
     def update(self, total_steps):
         if total_steps % self.freq == 0:
@@ -143,14 +143,14 @@ class DQN:
 
         self._behavior_net.train()
 
-        predict_targets = self._behavior_net(state).gather(1, action)
+        predict_targets = self._behavior_net(state).gather(1, action.type(torch.int64))
 
         self._target_net.eval()
         with torch.no_grad():
-            label_next = self._target_net(next_state).detch().max(1)[0].unsqueeze(1)
+            label_next = self._target_net(next_state).max(1)[0].unsqueeze(1)
+            labels = reward + (gamma * label_next * (1 - done))
 
-        labels = reward + (gamma * label_next * (1 - done))
-        loss = criterion(predict_targets, labels).to(self.device)
+        loss = criterion(predict_targets, labels)
 
         self._optimizer.zero_grad()
         loss.backward()
@@ -184,7 +184,7 @@ class DQN:
 def train(args, agent, writer):
     print('Start Training')
     env_raw = make_atari('BreakoutNoFrameskip-v4')
-    env = wrap_deepmind(env_raw)
+    env = wrap_deepmind(env_raw, frame_stack=True)
     action_space = env.action_space
     total_steps, epsilon = 0, 1.
     ewma_reward = 0
@@ -193,6 +193,11 @@ def train(args, agent, writer):
         total_reward = 0
         state = env.reset()
         state, reward, done, _ = env.step(1)  # fire first !!!
+        state = np.array(state)
+        state = np.transpose(state, axes=(2, 0, 1))
+
+        if state.shape[0] != 4:
+            continue
 
         for t in itertools.count(start=1):
             if total_steps < args.warmup:
@@ -206,6 +211,7 @@ def train(args, agent, writer):
 
             # execute action
             next_state, reward, done, _ = env.step(action)
+            next_state = np.transpose(next_state, axes=(2, 0, 1))
 
             # store transition
             agent.append(state, action, reward, next_state, done)
@@ -217,10 +223,11 @@ def train(args, agent, writer):
 
             if total_steps % args.eval_freq == 0:
                 """You can write another evaluate function, or just call the test function."""
-                test(args, agent, writer)
+                # test(args, agent, writer)
                 agent.save(args.model + "dqn_" + str(total_steps) + ".pt")
 
             total_steps += 1
+            state = next_state
             if done:
                 ewma_reward = 0.05 * total_reward + (1 - 0.05) * ewma_reward
                 writer.add_scalar('Train/Episode Reward', total_reward, episode)
@@ -234,7 +241,7 @@ def train(args, agent, writer):
 def test(args, agent, writer):
     print('Start Testing')
     env_raw = make_atari('BreakoutNoFrameskip-v4')
-    env = wrap_deepmind(env_raw)
+    env = wrap_deepmind(env_raw, frame_stack=True)
     action_space = env.action_space
     e_rewards = []
 
