@@ -20,11 +20,14 @@ from atari_wrappers import wrap_deepmind, make_atari
 
 class ReplayMemory(object):
     Transition = namedtuple(
-        'state',
-        'action',
-        'reward',
-        'next_state',
-        'done'
+        'Transition',
+        (
+            'state',
+            'action',
+            'reward',
+            'next_state',
+            'done'
+        )
     )
 
     def __init__(self, device, batch_size, capacity):
