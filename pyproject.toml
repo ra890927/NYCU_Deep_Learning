@@ -16,6 +16,7 @@ tqdm = "^4.65.0"
 autopep8 = "^2.0.2"
 pillow = "^10.0.0"
 pandas = "^2.0.3"
+gym = "0.15.7"
 
 
 [build-system]
