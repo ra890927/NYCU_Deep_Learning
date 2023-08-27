@@ -5,7 +5,6 @@ from torchvision import transforms
 from torchvision.utils import save_image
 
 from tqdm import tqdm
-from accelerate import Accelerator
 from argparse import ArgumentParser, Namespace
 from diffusers import UNet2DModel, DDPMScheduler
 from diffusers.optimization import get_cosine_schedule_with_warmup
@@ -56,22 +55,8 @@ class DDPM:
         self.noise_scheduler = DDPMScheduler(
             self.timestep, beta_schedule='squaredcos_cap_v2')
 
-        self.accelerator = Accelerator()
         self.train_loader, self.test_loader = self.__get_dataloader()
         self.optimizer = optim.AdamW(self.model.parameters(), lr=args.learning_rate)
-        self.lr_scheduler = get_cosine_schedule_with_warmup(
-            optimizer=self.optimizer,
-            num_warmup_steps=0,
-            num_training_steps=len(self.train_loader) * self.epochs
-        )
-
-        self.model, self.optimizer, self.train_loader, self.test_loader, self.lr_scheduler = self.accelerator.prepare(
-            self.model,
-            self.optimizer,
-            self.train_loader,
-            self.test_loader,
-            self.lr_scheduler
-        )
 
         self.rev_transforms = transforms.Compose([
             transforms.Normalize((0, 0, 0), (2, 2, 2)),
@@ -96,8 +81,7 @@ class DDPM:
                 loss = self.criterion(pred, noise)
 
                 self.optimizer.zero_grad()
-                self.accelerator.backward(loss)
-                self.lr_scheduler.step()
+                loss.backward()
                 self.optimizer.step()
 
                 self.__tqdm_bar(
