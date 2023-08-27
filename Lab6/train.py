@@ -64,7 +64,7 @@ class DDPM:
             num_training_steps=len(self.train_loader) * self.epochs
         )
 
-        self.model, self.optimizer, self.train_loader, self.lr_scheduler = self.accelerator.prepare(
+        self.model, self.optimizer, self.train_loader, self.test_loader, self.lr_scheduler = self.accelerator.prepare(
             self.model,
             self.optimizer,
             self.train_loader,
