@@ -128,6 +128,22 @@ class DDPM:
             img = self.rev_transforms(xt)
             save_image(img, f'{self.args.test_root}/test_{epoch}')
 
+    def load_pretrained(self) -> None:
+        model = UNet2DModel.from_pretrained(
+            pretrained_model_name_or_path=self.args.ckpt_path,
+            variant="non_ema",
+            from_tf=True,
+            low_cpu_mem_usage=False,
+            ignore_mismatched_sizes=True
+        )
+        model.class_embedding = nn.Linear(24, 512)
+        state_dict = torch.load(
+            f'{self.args.ckpt_path}/diffusion_pytorch_model.non_ema.bin')
+        filtered_state_dict = {k[16:]: v for k, v in state_dict.items(
+        ) if k == "class_embedding.weight" or k == "class_embedding.bias"}
+        model.class_embedding.load_state_dict(filtered_state_dict)
+        self.model = model.to(self.device)
+
     def __get_dataloader(self) -> DataLoader:
         train_loader = DataLoader(iclevrLoader(mode='train'),
                                   batch_size=self.args.batch_size, shuffle=True)
@@ -151,12 +167,20 @@ def parse_argument() -> Namespace:
     parser.add_argument('--test_dataset', type=str, default='test')
     parser.add_argument('--test_root', type=str, default='./test_result')
     parser.add_argument('--checkpoints', type=str, default='./checkpoints')
-    parser.add_argument('--save-model', action='store_true', default=True)
+    parser.add_argument('--test_only', action='store_true', default=False)
+    parser.add_argument('--ckpt', type=str)
     return parser.parse_args()
 
 
 def main() -> None:
     args = parse_argument()
+    model = DDPM(args)
+
+    if args.test_only:
+        model.load_pretrained()
+        model.eval(0)
+    else:
+        model.train()
 
 
 if __name__ == '__main__':
