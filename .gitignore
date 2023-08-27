@@ -1,13 +1,16 @@
 .vscode
 */__pycache__
 *.pyc
+*/log/
 */new_dataset
 */LAB4_Dataset
 *.DS_Store
 */storage
+*.pt
 *.zip
 *.out
 *.csv
 *.ckpt
 *.gif
+*.png
 setting.json
