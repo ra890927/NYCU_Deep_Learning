@@ -82,7 +82,7 @@ class DDPM:
     def train(self) -> None:
         for epoch in range(1, self.epochs + 1):
             self.model.train()
-            for img, label in (pbar := tqdm(self.dataloader)):
+            for img, label in (pbar := tqdm(self.train_loader)):
                 inputs = img.to(self.device, dtype=torch.float32)
                 labels = label.to(self.device, dtype=torch.float32).squeeze()
 
