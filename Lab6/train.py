@@ -151,7 +151,7 @@ class DDPM:
         return train_loader, test_loader
 
     def __tqdm_bar(self, pbar, epoch, loss, lr) -> None:
-        pbar.set_description(f"Epoch {epoch}, lr:{lr}", refresh=False)
+        pbar.set_description(f"Epoch {epoch}, lr:{round(lr, 4)}", refresh=False)
         pbar.set_postfix(loss=float(loss), refresh=False)
         pbar.refresh()
 
@@ -159,7 +159,7 @@ class DDPM:
 def parse_argument() -> Namespace:
     parser = ArgumentParser()
     parser.add_argument('-d', '--device', default='cuda')
-    parser.add_argument('-bs', '--batch_size', default=32)
+    parser.add_argument('-bs', '--batch_size', default=96)
     parser.add_argument('-e', '--epochs', type=int, default=80)
     parser.add_argument('-g', '--gamma', type=float, default=0.7)
     parser.add_argument('-t', '--timestep', type=int, default=1200)
