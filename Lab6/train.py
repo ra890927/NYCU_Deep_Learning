@@ -88,7 +88,7 @@ class DDPM:
                     pbar=pbar,
                     epoch=epoch,
                     loss=loss.detach().cpu().item(),
-                    lr=self.lr_scheduler.get_last_lr()[0]
+                    lr=self.optimizer.get_last_lr()[0]
                 )
 
             acc = self.eval(epoch)
