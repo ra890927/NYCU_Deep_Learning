@@ -82,30 +82,30 @@ class DDPM:
 
     def train(self) -> None:
         for epoch in range(1, self.epochs + 1):
-            self.model.train()
-            for img, label in (pbar := tqdm(self.train_loader)):
-                inputs = img.to(self.device, dtype=torch.float32)
-                labels = label.to(self.device, dtype=torch.float32).squeeze()
+            # self.model.train()
+            # for img, label in (pbar := tqdm(self.train_loader)):
+            #     inputs = img.to(self.device, dtype=torch.float32)
+            #     labels = label.to(self.device, dtype=torch.float32).squeeze()
 
-                noise = torch.rand_like(inputs)
-                timesteps = torch.randint(0, self.timestep - 1,
-                                          (inputs.shape[0],)).long().to(self.device)
-                noisy_inputs = self.noise_scheduler.add_noise(inputs, noise, timesteps)
+            #     noise = torch.rand_like(inputs)
+            #     timesteps = torch.randint(0, self.timestep - 1,
+            #                               (inputs.shape[0],)).long().to(self.device)
+            #     noisy_inputs = self.noise_scheduler.add_noise(inputs, noise, timesteps)
 
-                pred = self.model(noisy_inputs, timesteps, class_labels=labels).sample
-                loss = self.criterion(pred, noise)
+            #     pred = self.model(noisy_inputs, timesteps, class_labels=labels).sample
+            #     loss = self.criterion(pred, noise)
 
-                self.optimizer.zero_grad()
-                self.accelerator.backward(loss)
-                self.lr_scheduler.step()
-                self.optimizer.step()
+            #     self.optimizer.zero_grad()
+            #     self.accelerator.backward(loss)
+            #     self.lr_scheduler.step()
+            #     self.optimizer.step()
 
-                self.__tqdm_bar(
-                    pbar=pbar,
-                    epoch=epoch,
-                    loss=loss.detach().cpu().item(),
-                    lr=self.lr_scheduler.get_last_lr()[0]
-                )
+            #     self.__tqdm_bar(
+            #         pbar=pbar,
+            #         epoch=epoch,
+            #         loss=loss.detach().cpu().item(),
+            #         lr=self.lr_scheduler.get_last_lr()[0]
+            #     )
 
             acc = self.eval(epoch)
             self.model.save_pretrained(
