@@ -61,7 +61,7 @@ class DDPM:
         self.lr_scheduler = get_cosine_schedule_with_warmup(
             optimizer=self.optimizer,
             num_warmup_steps=0,
-            num_training_steps=len(self.dataloader) * self.epochs
+            num_training_steps=len(self.train_loader) * self.epochs
         )
 
         self.model, self.optimizer, self.train_loader, self.lr_scheduler = self.accelerator.prepare(
