@@ -16,7 +16,9 @@ tqdm = "^4.65.0"
 autopep8 = "^2.0.2"
 pillow = "^10.0.0"
 pandas = "^2.0.3"
-gym = "0.15.7"
+opencv-python = "^4.8.0.76"
+tensorboard = "^2.14.0"
+gym = {version = "0.15.7", extras = ["atari"]}
 
 
 [build-system]
