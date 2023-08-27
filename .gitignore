@@ -5,9 +5,11 @@
 */LAB4_Dataset
 *.DS_Store
 */storage
+*/log/
 *.zip
 *.out
 *.csv
 *.ckpt
 *.gif
+*.pt
 setting.json
