@@ -13,6 +13,7 @@ from diffusers.optimization import get_cosine_schedule_with_warmup
 from dataloader import iclevrLoader
 from evaluator import evaluation_model
 
+
 class DDPM:
     def __init__(
         self,
@@ -21,8 +22,8 @@ class DDPM:
         self.args = args
         self.epochs = args.epochs
         self.device = args.device
-        self.timestep = args.timestep        
-        
+        self.timestep = args.timestep
+
         self.model = UNet2DModel(
             sample_size=64,
             in_channels=3,
@@ -51,7 +52,8 @@ class DDPM:
         self.model.class_embedding = nn.Embedding(24, 512)
 
         self.criterion = nn.MSELoss()
-        self.noise_scheduler = DDPMScheduler(self.timestep, beta_schedule='squaredcos_cap_v2')
+        self.noise_scheduler = DDPMScheduler(
+            self.timestep, beta_schedule='squaredcos_cap_v2')
 
         self.accelerator = Accelerator()
         self.train_loader, self.test_loader = self.__get_dataloader()
@@ -77,9 +79,7 @@ class DDPM:
 
         self.eval_model = evaluation_model()
 
-
     def train(self) -> None:
-        max_acc = 0
         for epoch in range(1, self.epochs + 1):
             self.model.train()
             for img, label in (pbar := tqdm(self.dataloader)):
@@ -87,7 +87,8 @@ class DDPM:
                 labels = label.to(self.device, dtype=torch.float32).squeeze()
 
                 noise = torch.rand_like(inputs)
-                timesteps = torch.randint(0, self.timestep - 1, (inputs.shape[0],)).long().to(self.device)
+                timesteps = torch.randint(0, self.timestep - 1,
+                                          (inputs.shape[0],)).long().to(self.device)
                 noisy_inputs = self.noise_scheduler.add_noise(inputs, noise, timesteps)
 
                 pred = self.model(noisy_inputs, timesteps, class_labels=labels)
@@ -106,12 +107,10 @@ class DDPM:
                 )
 
             acc = self.eval(epoch)
-            if acc > max_acc:
-                max_acc = acc
-                self.model.save_pretrained(
-                    f'{self.args.checkpoints}/{epoch}-{round(100 * acc)}',
-                    variant='non_ema'
-                )
+            self.model.save_pretrained(
+                f'{self.args.checkpoints}/{epoch}-{round(100 * acc)}',
+                variant='non_ema'
+            )
 
     def eval(self, epoch) -> float:
         self.mode.eval()
@@ -130,10 +129,11 @@ class DDPM:
             save_image(img, f'{self.args.test_root}/test_{epoch}')
 
     def __get_dataloader(self) -> DataLoader:
-        train_loader = DataLoader(iclevrLoader(mode='train'), batch_size=self.args.batch_size, shuffle=True)    
-        test_loader = DataLoader(iclevrLoader(mode=self.args.test_dataset), batch_size=32)    
+        train_loader = DataLoader(iclevrLoader(mode='train'),
+                                  batch_size=self.args.batch_size, shuffle=True)
+        test_loader = DataLoader(iclevrLoader(mode=self.args.test_dataset), batch_size=32)
         return train_loader, test_loader
-    
+
     def __tqdm_bar(self, pbar, epoch, loss, lr) -> None:
         pbar.set_description(f"Epoch {epoch}, lr:{lr}", refresh=False)
         pbar.set_postfix(loss=float(loss), refresh=False)
@@ -154,9 +154,10 @@ def parse_argument() -> Namespace:
     parser.add_argument('--save-model', action='store_true', default=True)
     return parser.parse_args()
 
+
 def main() -> None:
     args = parse_argument()
-    
+
 
 if __name__ == '__main__':
     main()
