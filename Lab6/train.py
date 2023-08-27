@@ -91,7 +91,7 @@ class DDPM:
                                           (inputs.shape[0],)).long().to(self.device)
                 noisy_inputs = self.noise_scheduler.add_noise(inputs, noise, timesteps)
 
-                pred = self.model(noisy_inputs, timesteps, class_labels=labels)
+                pred = self.model(noisy_inputs, timesteps, class_labels=labels).sample
                 loss = self.criterion(pred, noise)
 
                 self.optimizer.zero_grad()
