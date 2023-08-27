@@ -50,6 +50,7 @@ class DDPM:
             ),
         )
         self.model.class_embedding = nn.Linear(24, 512)
+        self.model = self.model.to(self.device)
 
         self.criterion = nn.MSELoss()
         self.noise_scheduler = DDPMScheduler(
@@ -119,8 +120,8 @@ class DDPM:
                 xt = torch.randn(32, 3, 64, 64).to(self.device)
                 labels = label.to(self.device, dtype=torch.float32).squeeze()
 
-                for t in range(self.timestep, 0, -1):
-                    outputs = self.model(xt, t, class_labels=labels)
+                for t in range(self.timestep - 1, 0, -1):
+                    outputs = self.model(xt, t, class_labels=labels).sample
                     xt = self.noise_scheduler.step(outputs, t, xt).prev_sample
 
                 acc = self.eval_model.eval(xt, labels)
@@ -145,8 +146,12 @@ class DDPM:
         self.model = model.to(self.device)
 
     def __get_dataloader(self) -> DataLoader:
-        train_loader = DataLoader(iclevrLoader(mode='train'),
-                                  batch_size=self.args.batch_size, shuffle=True)
+        train_loader = DataLoader(
+            iclevrLoader(mode='train'),
+            batch_size=self.args.batch_size,
+            num_workers=4,
+            shuffle=True
+        )
         test_loader = DataLoader(iclevrLoader(mode=self.args.test_dataset), batch_size=32)
         return train_loader, test_loader
 
