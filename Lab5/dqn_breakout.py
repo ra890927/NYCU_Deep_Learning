@@ -273,10 +273,10 @@ def main():
     parser.add_argument('--logdir', default='log/dqn')
     # train
     parser.add_argument('--warmup', default=20000, type=int)
-    parser.add_argument('--episode', default=20000, type=int)
+    parser.add_argument('--episode', default=3000000, type=int)
     parser.add_argument('--capacity', default=100000, type=int)
     parser.add_argument('--batch_size', default=32, type=int)
-    parser.add_argument('--lr', default=0.0000625, type=float)
+    parser.add_argument('--lr', default=0.0003, type=float)
     parser.add_argument('--eps_decay', default=1000000, type=float)
     parser.add_argument('--eps_min', default=0.1, type=float)
     parser.add_argument('--gamma', default=.99, type=float)
