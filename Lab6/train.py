@@ -49,7 +49,7 @@ class DDPM:
                 "UpBlock2D",
             ),
         )
-        self.model.class_embedding = nn.Embedding(24, 512)
+        self.model.class_embedding = nn.Linear(24, 512)
 
         self.criterion = nn.MSELoss()
         self.noise_scheduler = DDPMScheduler(
