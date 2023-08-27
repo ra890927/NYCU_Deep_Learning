@@ -5,6 +5,7 @@ from torchvision import transforms
 from torchvision.utils import save_image
 
 from tqdm import tqdm
+from accelerate import Accelerator
 from argparse import ArgumentParser, Namespace
 from diffusers import UNet2DModel, DDPMScheduler
 from diffusers.optimization import get_cosine_schedule_with_warmup
@@ -55,8 +56,22 @@ class DDPM:
         self.noise_scheduler = DDPMScheduler(
             self.timestep, beta_schedule='squaredcos_cap_v2')
 
+        self.accelerator = Accelerator()
         self.train_loader, self.test_loader = self.__get_dataloader()
         self.optimizer = optim.AdamW(self.model.parameters(), lr=args.learning_rate)
+        self.lr_scheduler = get_cosine_schedule_with_warmup(
+            optimizer=self.optimizer,
+            num_warmup_steps=0,
+            num_training_steps=len(self.train_loader) * self.epochs
+        )
+
+        self.model, self.optimizer, self.train_loader, self.test_loader, self.lr_scheduler = self.accelerator.prepare(
+            self.model,
+            self.optimizer,
+            self.train_loader,
+            self.test_loader,
+            self.lr_scheduler
+        )
 
         self.rev_transforms = transforms.Compose([
             transforms.Normalize((0, 0, 0), (2, 2, 2)),
@@ -72,23 +87,27 @@ class DDPM:
                 inputs = img.to(self.device, dtype=torch.float32)
                 labels = label.to(self.device, dtype=torch.float32).squeeze()
 
-                noise = torch.rand_like(inputs)
-                timesteps = torch.randint(0, self.timestep - 1,
-                                          (inputs.shape[0],)).long().to(self.device)
+                noise = torch.rand_like(inputs).to(self.device)
+                timesteps = torch.randint(
+                    0, self.timestep - 1, (inputs.shape[0],),
+                    dtype=torch.long, device=self.device
+                )
                 noisy_inputs = self.noise_scheduler.add_noise(inputs, noise, timesteps)
+                noisy_inputs = noisy_inputs.to(self.device)
 
                 pred = self.model(noisy_inputs, timesteps, class_labels=labels).sample
                 loss = self.criterion(pred, noise)
 
                 self.optimizer.zero_grad()
-                loss.backward()
+                self.accelerator.backward(loss)
+                self.lr_scheduler.step()
                 self.optimizer.step()
 
                 self.__tqdm_bar(
                     pbar=pbar,
                     epoch=epoch,
                     loss=loss.detach().cpu().item(),
-                    lr=self.optimizer.get_last_lr()[0]
+                    lr=self.lr_scheduler.get_last_lr()[0]
                 )
 
             acc = self.eval(epoch)
@@ -102,10 +121,11 @@ class DDPM:
         self.model.eval()
         with torch.no_grad():
             for _, label in self.test_loader:
-                xt = torch.randn(32, 3, 64, 64).to(self.device)
+                xt = torch.randn(32, 3, 64, 64, device=self.device)
                 labels = label.to(self.device, dtype=torch.float32).squeeze()
 
                 for t in tqdm(range(self.timestep - 1, 0, -1)):
+                    xt = xt.to(self.device)
                     outputs = self.model(xt, t, class_labels=labels).sample
                     xt = self.noise_scheduler.step(outputs, t, xt).prev_sample
 
