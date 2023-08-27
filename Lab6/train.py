@@ -113,20 +113,20 @@ class DDPM:
             )
 
     def eval(self, epoch) -> float:
-        self.mode.eval()
-        for _, label in tqdm(self.test_loader):
-            xt = torch.randn(32, 3, 64, 64).to(self.device)
-            labels = label.to(self.device, dtype=torch.float32).sqeeze()
+        self.model.eval()
+        with torch.no_grad():
+            for _, label in tqdm(self.test_loader):
+                xt = torch.randn(32, 3, 64, 64).to(self.device)
+                labels = label.to(self.device, dtype=torch.float32).sqeeze()
 
-            for t in range(self.timestep, 0, -1):
-                with torch.no_grad():
+                for t in range(self.timestep, 0, -1):
                     outputs = self.model(xt, t, class_labels=labels)
-                xt = self.noise_scheduler.step(outputs, t, xt).prev_sample
+                    xt = self.noise_scheduler.step(outputs, t, xt).prev_sample
 
-            acc = self.eval_model.eval(xt, labels)
-            print(f'Accuracy: {acc}')
-            img = self.rev_transforms(xt)
-            save_image(img, f'{self.args.test_root}/test_{epoch}')
+                acc = self.eval_model.eval(xt, labels)
+                print(f'Accuracy: {acc}')
+                img = self.rev_transforms(xt)
+                save_image(img, f'{self.args.test_root}/test_{epoch}')
 
     def load_pretrained(self) -> None:
         model = UNet2DModel.from_pretrained(
