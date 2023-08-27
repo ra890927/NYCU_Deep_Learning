@@ -128,6 +128,7 @@ class DDPM:
                 print(f'Accuracy: {acc}')
                 img = self.rev_transforms(xt)
                 save_image(img, f'{self.args.test_root}/test_{epoch}.png')
+        return acc
 
     def load_pretrained(self) -> None:
         model = UNet2DModel.from_pretrained(
