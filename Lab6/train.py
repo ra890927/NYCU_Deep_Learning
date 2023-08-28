@@ -146,6 +146,8 @@ class DDPM:
             low_cpu_mem_usage=False,
             ignore_mismatched_sizes=True
         )
+        print(model)
+        print(dir(model))
         class_embedding = nn.Linear(24, 512)
         # state_dict = torch.load(
         #     f'{self.args.ckpt_path}/diffusion_pytorch_model.non_ema.safetensors')
