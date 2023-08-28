@@ -152,7 +152,8 @@ class DDPM:
             f'{self.args.ckpt_path}/diffusion_pytorch_model.non_ema.safetensors',
             framework='pt',
             device=self.device
-        ) as pt:
+        ) as pt_file:
+            pt = {key: pt_file.get_tensor(key) for key in pt_file.keys()}
             filtered_state_dict = {k[16:]: v for k, v in pt.items(
             ) if k == "class_embedding.weight" or k == "class_embedding.bias"}
 
