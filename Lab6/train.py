@@ -147,11 +147,11 @@ class DDPM:
             ignore_mismatched_sizes=True
         )
         model.class_embedding = nn.Linear(24, 512)
-        state_dict = torch.load(
-            f'{self.args.ckpt_path}/diffusion_pytorch_model.non_ema.safetensors')
-        filtered_state_dict = {k[16:]: v for k, v in state_dict.items(
-        ) if k == "class_embedding.weight" or k == "class_embedding.bias"}
-        model.class_embedding.load_state_dict(filtered_state_dict)
+        # state_dict = torch.load(
+        #     f'{self.args.ckpt_path}/diffusion_pytorch_model.non_ema.safetensors')
+        # filtered_state_dict = {k[16:]: v for k, v in state_dict.items(
+        # ) if k == "class_embedding.weight" or k == "class_embedding.bias"}
+        # model.class_embedding.load_state_dict(filtered_state_dict)
         self.model = model.to(self.device)
 
     def __get_dataloader(self) -> DataLoader:
