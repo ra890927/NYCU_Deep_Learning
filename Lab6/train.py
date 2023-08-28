@@ -154,7 +154,7 @@ class DDPM:
             device=self.device
         ) as pt_file:
             pt = {key: pt_file.get_tensor(key) for key in pt_file.keys()}
-            print(pt['class_embedding'])
+            print(pt)
             filtered_state_dict = {k[16:]: v for k, v in pt.items(
             ) if k == "class_embedding.weight" or k == "class_embedding.bias"}
 
