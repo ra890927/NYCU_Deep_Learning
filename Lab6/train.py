@@ -182,7 +182,7 @@ def parse_argument() -> Namespace:
     parser.add_argument('--test_root', type=str, default='./test_result')
     parser.add_argument('--checkpoints', type=str, default='./checkpoints')
     parser.add_argument('--test_only', action='store_true', default=False)
-    parser.add_argument('--ckpt', type=str)
+    parser.add_argument('--ckpt_path', type=str)
     return parser.parse_args()
 
 
