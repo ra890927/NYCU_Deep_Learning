@@ -5,6 +5,7 @@ from torchvision import transforms
 from torchvision.utils import save_image
 
 from tqdm import tqdm
+from safetensors import safe_open
 from accelerate import Accelerator
 from argparse import ArgumentParser, Namespace
 from diffusers import UNet2DModel, DDPMScheduler
@@ -139,23 +140,25 @@ class DDPM:
         return acc
 
     def load_pretrained(self) -> None:
-        model = UNet2DModel.from_pretrained(
+        self.model = UNet2DModel.from_pretrained(
             pretrained_model_name_or_path=self.args.ckpt_path,
             variant="non_ema",
             from_tf=True,
             low_cpu_mem_usage=False,
             ignore_mismatched_sizes=True
         )
-        print(model)
-        print(dir(model))
-        class_embedding = nn.Linear(24, 512)
-        # state_dict = torch.load(
-        #     f'{self.args.ckpt_path}/diffusion_pytorch_model.non_ema.safetensors')
-        filtered_state_dict = {k[16:]: v for k, v in model.items(
-        ) if k == "class_embedding.weight" or k == "class_embedding.bias"}
-        class_embedding.load_state_dict(filtered_state_dict)
-        self.class_embedding = class_embedding
-        self.model = model.to(self.device)
+
+        with safe_open(
+            f'{self.args.ckpt_path}/diffusion_pytorch_model.non_ema.safetensors',
+            framework='pt',
+            device=self.device
+        ) as pt:
+            filtered_state_dict = {k[16:]: v for k, v in pt.items(
+            ) if k == "class_embedding.weight" or k == "class_embedding.bias"}
+
+        self.class_embedding = nn.Linear(24, 512)
+        self.class_embedding.load_state_dict(filtered_state_dict)
+        self.model = self.model.to(self.device)
 
     def __get_dataloader(self) -> DataLoader:
         train_loader = DataLoader(
