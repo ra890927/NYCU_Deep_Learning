@@ -87,7 +87,7 @@ class DDPM:
                 inputs = img.to(self.device, dtype=torch.float32)
                 labels = label.to(self.device, dtype=torch.float32).squeeze()
 
-                noise = torch.rand_like(inputs).to(self.device)
+                noise = torch.randn(inputs.shape).to(self.device)
                 timesteps = torch.randint(
                     0, self.timestep - 1, (inputs.shape[0],),
                     dtype=torch.long, device=self.device
