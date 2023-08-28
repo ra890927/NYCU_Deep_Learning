@@ -132,7 +132,10 @@ class DDPM:
                 acc = self.eval_model.eval(xt, labels)
                 print(f'Accuracy: {acc}')
                 img = self.rev_transforms(xt)
-                save_image(img, f'{self.args.test_root}/test_{epoch}.png')
+                if epoch >= 0:
+                    save_image(img, f'{self.args.test_root}/test_{epoch}.png')
+                else:
+                    save_image(img, f'{self.args.test_root}/test.png')
         return acc
 
     def load_pretrained(self) -> None:
@@ -189,7 +192,7 @@ def main() -> None:
 
     if args.test_only:
         model.load_pretrained()
-        model.eval(0)
+        model.eval(-1)
     else:
         model.train()
 
