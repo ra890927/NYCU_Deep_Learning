@@ -23,8 +23,8 @@ class iclevrLoader(data.Dataset):
 
         if mode == 'train':
             self.img_path_list, self.label_list = self.__get_train_data()
-        elif mode == 'test':
-            self.label_list = self.__get_test_data()
+        elif 'test' in mode:
+            self.label_list = self.__get_test_data(mode)
 
     def __len__(self):
         return len(self.label_list)
@@ -64,8 +64,8 @@ class iclevrLoader(data.Dataset):
 
         return img_path_list, label_list
     
-    def __get_test_data(self):
-        with open(f'{self.root}/test.json', 'r', encoding='utf-8') as json_file:
+    def __get_test_data(self, test_mode):
+        with open(f'{self.root}/{test_mode}.json', 'r', encoding='utf-8') as json_file:
             data = json.load(json_file)
 
         lb = preprocessing.LabelBinarizer()
