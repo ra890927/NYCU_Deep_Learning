@@ -130,6 +130,10 @@ class DDPM:
                     outputs = self.model(xt, t, class_labels=labels).sample
                     xt = self.noise_scheduler.step(outputs, t, xt).prev_sample
 
+                    if progressive and t % 200 == 0:
+                        imgt = self.rev_transforms(xt)
+                        save_image(imgt, f'{self.args.test_root}/test_prog_{t // 200}.png')
+
                 acc = self.eval_model.eval(xt, labels)
                 print(f'Accuracy: {acc}')
                 img = self.rev_transforms(xt)
@@ -154,17 +158,17 @@ class DDPM:
             device=self.device
         ) as pt_file:
             pt = {key: pt_file.get_tensor(key) for key in pt_file.keys()}
-            print(pt.keys())
             filtered_state_dict = {k[16:]: v for k, v in pt.items(
             ) if k == "class_embedding.weight" or k == "class_embedding.bias"}
 
-        self.class_embedding = nn.Linear(24, 512)
-        self.class_embedding.load_state_dict(filtered_state_dict)
+        class_embedding = nn.Linear(24, 512)
+        class_embedding.load_state_dict(filtered_state_dict)
+        self.model.class_embedding = class_embedding
         self.model = self.model.to(self.device)
 
     def __get_dataloader(self) -> DataLoader:
         train_loader = DataLoader(
-            iclevrLoader(mode='train'),
+            iclevrLoader(mode='test'),
             batch_size=self.args.batch_size,
             num_workers=4,
             shuffle=True
@@ -183,7 +187,6 @@ def parse_argument() -> Namespace:
     parser.add_argument('-d', '--device', default='cuda')
     parser.add_argument('-bs', '--batch_size', default=96)
     parser.add_argument('-e', '--epochs', type=int, default=80)
-    parser.add_argument('-g', '--gamma', type=float, default=0.7)
     parser.add_argument('-t', '--timestep', type=int, default=1200)
     parser.add_argument('-lr', '--learning_rate', type=float, default=1e-4)
     parser.add_argument('--test_dataset', type=str, default='test')
@@ -200,7 +203,7 @@ def main() -> None:
 
     if args.test_only:
         model.load_pretrained()
-        model.eval(-1)
+        model.eval(-1, progressive=True)
     else:
         model.train()
 
