@@ -117,7 +117,7 @@ class DDPM:
                 variant='non_ema'
             )
 
-    def eval(self, epoch) -> float:
+    def eval(self, epoch, progressive=False) -> float:
         self.model.eval()
         with torch.no_grad():
             for _, label in self.test_loader:
@@ -148,7 +148,7 @@ class DDPM:
         )
         model.class_embedding = nn.Linear(24, 512)
         state_dict = torch.load(
-            f'{self.args.ckpt_path}/diffusion_pytorch_model.non_ema.bin')
+            f'{self.args.ckpt_path}/diffusion_pytorch_model.non_ema.safetensors')
         filtered_state_dict = {k[16:]: v for k, v in state_dict.items(
         ) if k == "class_embedding.weight" or k == "class_embedding.bias"}
         model.class_embedding.load_state_dict(filtered_state_dict)
