@@ -2,7 +2,7 @@ import torch
 from torch import nn, optim
 from torch.utils.data import DataLoader
 from torchvision import transforms
-from torchvision.utils import save_image
+from torchvision.utils import save_image, make_grid
 
 from tqdm import tqdm
 from safetensors import safe_open
@@ -121,10 +121,12 @@ class DDPM:
     def eval(self, epoch, progressive=False) -> float:
         self.model.eval()
         with torch.no_grad():
-            for _, label in self.test_loader:
-                xt = torch.randn(32, 3, 64, 64, device=self.device)
+            for idx, (_, label) in enumerate(self.test_loader):
+                xt = torch.randn(
+                    self.args.test_batch_size, 3, 64, 64, device=self.device)
                 labels = label.to(self.device, dtype=torch.float32).squeeze()
-
+                
+                prog_list = []
                 for t in tqdm(range(self.timestep - 1, 0, -1)):
                     xt = xt.to(self.device)
                     outputs = self.model(xt, t, class_labels=labels).sample
@@ -132,15 +134,21 @@ class DDPM:
 
                     if progressive and t % 200 == 0:
                         imgt = self.rev_transforms(xt)
-                        save_image(imgt, f'{self.args.test_root}/test_prog_{t // 200}.png')
+                        prog_list.append(imgt)
 
                 acc = self.eval_model.eval(xt, labels)
                 print(f'Accuracy: {acc}')
                 img = self.rev_transforms(xt)
+                prog_list.append(img)
+
+                if progressive:
+                    imgt = make_grid(prog_list, nrow=6)
+                    save_image(imgt, f'{self.args.test_root}/{idx}_test_prog.png')
+
                 if epoch >= 0:
                     save_image(img, f'{self.args.test_root}/test_{epoch}.png')
                 else:
-                    save_image(img, f'{self.args.test_root}/test.png')
+                    save_image(img, f'{self.args.test_root}/{idx}_test.png')
         return acc
 
     def load_pretrained(self) -> None:
@@ -173,7 +181,11 @@ class DDPM:
             num_workers=4,
             shuffle=True
         )
-        test_loader = DataLoader(iclevrLoader(mode=self.args.test_dataset), batch_size=32)
+        test_loader = DataLoader(
+            iclevrLoader(mode=self.args.test_dataset),
+            batch_size=self.args.test_batch_size
+        )
+
         return train_loader, test_loader
 
     def __tqdm_bar(self, pbar, epoch, loss, lr) -> None:
@@ -189,6 +201,7 @@ def parse_argument() -> Namespace:
     parser.add_argument('-e', '--epochs', type=int, default=80)
     parser.add_argument('-t', '--timestep', type=int, default=1200)
     parser.add_argument('-lr', '--learning_rate', type=float, default=1e-4)
+    parser.add_argument('--test_batch_size', type=int, default=32)
     parser.add_argument('--test_dataset', type=str, default='test')
     parser.add_argument('--test_root', type=str, default='./test_result')
     parser.add_argument('--checkpoints', type=str, default='./checkpoints')
