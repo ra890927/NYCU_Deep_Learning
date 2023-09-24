@@ -119,19 +119,19 @@ for _, label in self.test_loader:
 
 ### A. Show your accuracy screenshot based on the testing data.
 
-|                         test (0.875)                         |                       new_test (0.869)                       |
-| :----------------------------------------------------------: | :----------------------------------------------------------: |
-| ![](/Users/shiheng/Documents/Github/Deep_Learning/Lab6/image/test_acc.png) | ![](/Users/shiheng/Documents/Github/Deep_Learning/Lab6/image/new_test_acc.png) |
+|       test (0.875)        |       new_test (0.869)        |
+| :-----------------------: | :---------------------------: |
+| ![](./image/test_acc.png) | ![](./image/new_test_acc.png) |
 
 
 
 ### B. Show your synthetic image grids and a progressive generation image.
 
-<img src="/Users/shiheng/Documents/Github/Deep_Learning/Lab6/image/test_prog.png" style="zoom:200%;" />
+<img src="./image/test_prog.png" style="zoom:200%;" />
 
-|                             test                             |                           new_test                           |
-| :----------------------------------------------------------: | :----------------------------------------------------------: |
-| ![](/Users/shiheng/Documents/Github/Deep_Learning/Lab6/image/test.png) | ![](/Users/shiheng/Documents/Github/Deep_Learning/Lab6/image/new_test.png) |
+|         test          |         new_test          |
+| :-------------------: | :-----------------------: |
+| ![](./image/test.png) | ![](./image/new_test.png) |
 
 
 
