@@ -12,5 +12,5 @@
 *.csv
 *.ckpt
 *.gif
-*.png
+
 setting.json
