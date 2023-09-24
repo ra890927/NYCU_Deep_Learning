@@ -453,10 +453,10 @@ Other students will use rotation and flip to increase image strength. The differ
 
 ### A. The highest testing accuracy
 
-|   ResNet18    | ![](/Users/shiheng/Desktop/Github/Deep_Learning/Lab3/storage/best/ResNet18_kaggle_screenshot.png) |
-| :-----------: | ------------------------------------------------------------ |
-| **ResNet50**  | ![](/Users/shiheng/Desktop/Github/Deep_Learning/Lab3/storage/best/ResNet50_kaggle_screenshot.png) |
-| **ResNet152** | ![](/Users/shiheng/Desktop/Github/Deep_Learning/Lab3/storage/best/ResNet152_kaggle_screenshot.png) |
+|   ResNet18    | ![](./image/ResNet18_kaggle_screenshot.png)  |
+| :-----------: | -------------------------------------------- |
+| **ResNet50**  | ![](./image/ResNet50_kaggle_screenshot.png)  |
+| **ResNet152** | ![](./image/ResNet152_kaggle_screenshot.png) |
 
 Above is my best accuracy in each Kaggle competition. The best accuracy is **ResNet18**.
 
@@ -471,13 +471,13 @@ Above is my best accuracy in each Kaggle competition. The best accuracy is **Res
 
 This is accuracy curve with three models. Because of three models with different epochs, I only show last 40 epochs limit by ResNet152 (epochs 40). Valid test always oscillates up and down, but accuracy will go up.
 
-![](/Users/shiheng/Desktop/Github/Deep_Learning/Lab3/storage/best/plot.png)
+![](./image/plot.png)
 
 This is confusion matrix about three models. The distinguishing leukemia part has better accuracy.  The complete accuracy is limited by distinguishing normal cells.
 
 |                         **ResNet18**                         |                         **ResNet50**                         |                        **ResNet152**                         |
 | :----------------------------------------------------------: | :----------------------------------------------------------: | :----------------------------------------------------------: |
-| <img src="/Users/shiheng/Desktop/Github/Deep_Learning/Lab3/storage/best/ResNet18_confusion_matrix.png" style="zoom:33%;" /> | <img src="/Users/shiheng/Desktop/Github/Deep_Learning/Lab3/storage/best/ResNet50_confusion_matrix.png" style="zoom:33%;" /> | <img src="/Users/shiheng/Desktop/Github/Deep_Learning/Lab3/storage/best/ResNet152_confusion_matrix.png" style="zoom:33%;" /> |
+| <img src="./image/ResNet18_confusion_matrix.png" style="zoom:33%;" /> | <img src="./image/ResNet50_confusion_matrix.png" style="zoom:33%;" /> | <img src="./image/ResNet152_confusion_matrix.png" style="zoom:33%;" /> |
 
 
 
