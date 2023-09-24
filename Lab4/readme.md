@@ -122,7 +122,7 @@ There are three different kl annealing ratio update method.
 
 ### A. Plot teacher forcing ratio
 
-![](/Users/shiheng/Documents/Github/Deep_Learning/Lab4/teacher_forcing_loss.png)
+![](/Users/shiheng/Documents/Github/Deep_Learning/Lab4/image/teacher_forcing_loss.png)
 
 There are two line, blue is train loss, orange is valid loss. Each point on line shows teacher forcing true (red) or false (blue).
 
@@ -132,13 +132,13 @@ If teacher forcing is true, train loss will increase a little, but valid loss wi
 
 |                           Cyclical                           |                          Monotonic                           |                             None                             |
 | :----------------------------------------------------------: | :----------------------------------------------------------: | :----------------------------------------------------------: |
-| <img src="/Users/shiheng/Documents/Github/Deep_Learning/Lab4/teacher_forcing_loss.png" style="zoom:33%;" /> | <img src="/Users/shiheng/Documents/Github/Deep_Learning/Lab4/mono_teacher_forcing_loss.png" style="zoom:33%;" /> | <img src="/Users/shiheng/Documents/Github/Deep_Learning/Lab4/none_teacher_forcing_loss.png" style="zoom:33%;" /> |
+| <img src="/Users/shiheng/Documents/Github/Deep_Learning/Lab4/image/teacher_forcing_loss.png" style="zoom:33%;" /> | <img src="/Users/shiheng/Documents/Github/Deep_Learning/Lab4/image/mono_teacher_forcing_loss.png" style="zoom:33%;" /> | <img src="/Users/shiheng/Documents/Github/Deep_Learning/Lab4/image/none_teacher_forcing_loss.png" style="zoom:33%;" /> |
 
 In my experiment, cyclical annealing is the best. In monotonic annealing on epoch two has considerable train loss. The last result in monotonic and none are similar, average test PSNR are 18.
 
 ### C. Plot the PSNR per frame diagram in validation dataset
 
-![](/Users/shiheng/Documents/Github/Deep_Learning/Lab4/psnr.png)
+![](/Users/shiheng/Documents/Github/Deep_Learning/Lab4/image/psnr.png)
 
 ### D. Derivate conditional VAE formula
 
